@@ -9,6 +9,7 @@
 @end
 
 static NSString *const _id = @"id";
+static NSString *const _externalId = @"externalId";
 static NSString *const _calendarId = @"calendarId";
 static NSString *const _title = @"title";
 static NSString *const _location = @"location";
@@ -76,6 +77,7 @@ RCT_EXPORT_MODULE()
     EKEvent *calendarEvent = nil;
     NSString *calendarId = [RCTConvert NSString:details[_calendarId]];
     NSString *eventId = [RCTConvert NSString:details[_id]];
+    NSString *externalEventId = [RCTConvert NSString:details[_externalId]];
     NSString *title = [RCTConvert NSString:details[_title]];
     NSString *location = [RCTConvert NSString:details[_location]];
     NSDate *startDate = [RCTConvert NSDate:details[_startDate]];
@@ -90,7 +92,8 @@ RCT_EXPORT_MODULE()
 
     if (eventId) {
         calendarEvent = (EKEvent *)[self.eventStore calendarItemWithIdentifier:eventId];
-
+    } else if (externalEventId) {
+        calendarEvent = (EKEvent *)[self.eventStore calendarItemsWithExternalIdentifier:externalEventId];
     } else {
         calendarEvent = [EKEvent eventWithEventStore:self.eventStore];
         calendarEvent.calendar = [self.eventStore defaultCalendarForNewEvents];
@@ -452,6 +455,10 @@ RCT_EXPORT_MODULE()
         [formedCalendarEvent setValue:event.calendarItemIdentifier forKey:_id];
     }
 
+    if (event.calendarItemExternalIdentifier) {
+        [formedCalendarEvent setValue:event.calendarItemExternalIdentifier forKey:_externalId];
+    }
+
     if (event.calendar) {
         [formedCalendarEvent setValue:@{
                                         @"id": event.calendar.calendarIdentifier,
@@ -694,7 +701,7 @@ RCT_EXPORT_METHOD(removeEvent:(NSString *)eventId resolver:(RCTPromiseResolveBlo
 RCT_EXPORT_METHOD(removeFutureEvents:(NSString *)eventId resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
     NSDictionary *response = [self deleteEvent:eventId span:EKSpanFutureEvents];
-    
+
     if ([response valueForKey:@"success"] != [NSNull null]) {
         resolve([response valueForKey:@"success"]);
     } else {
