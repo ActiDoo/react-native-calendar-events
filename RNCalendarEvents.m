@@ -22,6 +22,8 @@ static NSString *const _alarms = @"alarms";
 static NSString *const _recurrence = @"recurrence";
 static NSString *const _recurrenceRule = @"recurrenceRule";
 static NSString *const _occurrenceDate = @"occurrenceDate";
+static NSString *const _creationDate = @"creationDate";
+static NSString *const _lastModifiedDate = @"lastModifiedDate";
 static NSString *const _isDetached = @"isDetached";
 static NSString *const _availability = @"availability";
 
@@ -547,6 +549,14 @@ RCT_EXPORT_MODULE()
 
     if (event.occurrenceDate) {
         [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.occurrenceDate] forKey:_occurrenceDate];
+    }
+
+    if (event.creationDate) {
+        [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.creationDate] forKey:_creationDate];
+    }
+
+    if (event.lastModifiedDate) {
+        [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.lastModifiedDate] forKey:_lastModifiedDate];
     }
 
     [formedCalendarEvent setValue:[NSNumber numberWithBool:event.isDetached] forKey:_isDetached];
