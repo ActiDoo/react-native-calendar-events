@@ -719,4 +719,16 @@ RCT_EXPORT_METHOD(removeFutureEvents:(NSString *)eventId resolver:(RCTPromiseRes
     }
 }
 
+RCT_EXPORT_METHOD(createCalendar:(NSString*)calendarId widthTitle:(NSString*)title)
+{
+    EKCalendar *newCalendar = [EKCalendar calendarForEntityType:EKEntityTypeEvent eventStore:self.eventStore];
+    newCalendar.title = title;
+
+    EKCalendar *calendar = [self.eventStore calendarWithIdentifier:calendarId];
+    newCalendar.source = calendar.source;
+
+    NSError *error = nil;
+    [self.eventStore saveCalendar:newCalendar commit:YES error:&error];
+}
+
 @end

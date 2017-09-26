@@ -36,6 +36,10 @@ export default {
 
   removeFutureEvents (id) {
     return RNCalendarEvents.removeFutureEvents(id)
+  },
+
+  createCalendar (calendarId, title) {
+    return RNCalendarEvents.createCalendar(calendarId, title)
   }
 
 }
