@@ -26,6 +26,7 @@ static NSString *const _creationDate = @"creationDate";
 static NSString *const _lastModifiedDate = @"lastModifiedDate";
 static NSString *const _isDetached = @"isDetached";
 static NSString *const _availability = @"availability";
+static NSString *const _attendees = @"attendees";
 
 @implementation RNCalendarEvents
 
@@ -406,6 +407,68 @@ RCT_EXPORT_MODULE()
 
     return EKEventAvailabilityNotSupported;
 }
+                                                          
+#pragma mark -
+#pragma mark enum2string
+- (NSString *)participantRoleStringMatchingConstant:(EKParticipantRole)constant
+    {
+        switch(constant) {
+            case EKParticipantRoleChair:
+                return @"char";
+            case EKParticipantRoleOptional:
+                return @"optional";
+            case EKParticipantRoleRequired:
+                return @"required";
+            case EKParticipantRoleNonParticipant:
+                return @"nonParticipant";
+            case EKParticipantRoleUnknown:
+                return @"unknown";
+            default:
+                return @"unknown";
+        }
+    }
+                
+- (NSString *)participantTypeStringMatchingConstant:(EKParticipantType)constant
+{
+  switch(constant) {
+      case EKParticipantTypeRoom:
+          return @"room";
+      case EKParticipantTypeGroup:
+          return @"group";
+      case EKParticipantTypePerson:
+          return @"person";
+      case EKParticipantTypeUnknown:
+          return @"unknown";
+      case EKParticipantTypeResource:
+          return @"resource";
+      default:
+          return @"unknown";
+  }
+}
+                           
+- (NSString *)participantStatusStringMatchingConstant:(EKParticipantStatus)constant
+    {
+        switch(constant) {
+            case EKParticipantStatusPending:
+                return @"pending";
+            case EKParticipantStatusUnknown:
+                return @"unknown";
+            case EKParticipantStatusAccepted:
+                return @"accepted";
+            case EKParticipantStatusDeclined:
+                return @"declined";
+            case EKParticipantStatusCompleted:
+                return @"completed";
+            case EKParticipantStatusDelegated:
+                return @"delegated";
+            case EKParticipantStatusInProcess:
+                return @"inProcess";
+            case EKParticipantStatusTentative:
+                return @"tentative";
+            default:
+                return @"unknown";
+        }
+    }
 
 #pragma mark -
 #pragma mark Serializers
@@ -442,6 +505,7 @@ RCT_EXPORT_MODULE()
                                                  @"endDate": @""
                                                  },
                                          _availability: @"",
+                                         _attendees: [NSArray array],
                                          };
 
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
@@ -586,6 +650,26 @@ RCT_EXPORT_MODULE()
     }
 
     [formedCalendarEvent setValue:[self availabilityStringMatchingConstant:event.availability] forKey:_availability];
+    
+    if (event.hasAttendees) {
+        NSMutableArray *attendees = [[NSMutableArray alloc] init];
+        
+        for (EKParticipant *participant in event.attendees) {
+            
+            NSMutableDictionary *formattedParticipant = [[NSMutableDictionary alloc] init];
+            
+            [formattedParticipant setValue:(participant.name) forKey:@"name"];
+            [formattedParticipant setValue:([self participantRoleStringMatchingConstant:participant.participantRole]) forKey:@"participantRole"];
+            [formattedParticipant setValue:[self participantTypeStringMatchingConstant:participant.participantType] forKey:@"participantType"];
+            [formattedParticipant setValue:[self participantStatusStringMatchingConstant:participant.participantStatus] forKey:@"participantStatus"];
+            [formattedParticipant setValue:(participant.URL) forKey:@"url"];
+            [formattedParticipant setValue:[NSNumber numberWithBool:participant.isCurrentUser] forKey:@"isCurrentUser"];
+            
+            [attendees addObject:formattedParticipant];
+        }
+        
+        [formedCalendarEvent setValue:attendees forKey:_attendees];
+    }
 
     return [formedCalendarEvent copy];
 }
