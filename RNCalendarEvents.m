@@ -470,6 +470,31 @@ RCT_EXPORT_MODULE()
         }
     }
 
+
+
+- (NSString *)weekDayStringMatchingConstants:(EKWeekday) constant
+{
+    switch(constant) {
+        case EKWeekdaySaturday:
+            return @"saturday";
+        case EKWeekdaySunday:
+            return @"sunday";
+        case EKWeekdayMonday:
+            return @"monday";
+        case EKWeekdayTuesday:
+            return @"tuesday";
+        case EKWeekdayWednesday:
+            return @"wednesday";
+        case EKWeekdayThursday:
+            return @"thursday";
+        case EKWeekdayFriday:
+            return @"friday";
+        default:
+            return @"unknown";
+    }
+}
+
+
 #pragma mark -
 #pragma mark Serializers
 
@@ -502,12 +527,20 @@ RCT_EXPORT_MODULE()
                                                  @"frequency": @"",
                                                  @"interval": @"",
                                                  @"occurrence": @"",
-                                                 @"endDate": @""
+                                                 @"endDate": @"",
+                                                 @"firstDayOfTheWeek": @"",
+                                                 @"daysOfTheMonth": [NSArray array],
+                                                 @"daysOfTheYear": [NSArray array],
+                                                 @"weeksOfTheYear": [NSArray array],
+                                                 @"monthsOfTheYear": [NSArray array],
+                                                 @"daysOfTheWeek": [NSArray array]
                                                  },
                                          _availability: @"",
                                          _attendees: [NSArray array],
                                          };
 
+    //firstDayOfTheWeek, daysOfTheMonth, daysOfTheYear, weeksOfTheYear, monthsOfTheYear, daysOfTheWeek
+    
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     NSTimeZone *timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
     [dateFormatter setTimeZone:timeZone];
@@ -644,6 +677,44 @@ RCT_EXPORT_MODULE()
 
         if ([[rule recurrenceEnd] occurrenceCount]) {
             [recurrenceRule setValue:@([[rule recurrenceEnd] occurrenceCount]) forKey:@"occurrence"];
+        }
+        
+        if ([rule firstDayOfTheWeek]) {
+            [recurrenceRule setValue:@([rule firstDayOfTheWeek]) forKey:@"firstDayOfTheWeek"];
+        }
+        
+        if ([rule daysOfTheMonth] != nil) {
+            NSArray *daysOfTheMonth = [NSArray arrayWithArray:[rule daysOfTheMonth]];
+            [recurrenceRule setValue:daysOfTheMonth forKey:@"daysOfTheMonth"];
+        }
+        
+        if ([rule daysOfTheYear] != nil) {
+            NSArray *daysOfTheYear = [NSArray arrayWithArray:[rule daysOfTheYear]];
+            [recurrenceRule setValue:daysOfTheYear forKey:@"daysOfTheYear"];
+        }
+        
+        if ([rule weeksOfTheYear] != nil) {
+            NSArray *weeksOfTheYear = [NSArray arrayWithArray:[rule weeksOfTheYear]];
+            [recurrenceRule setValue:weeksOfTheYear forKey:@"weeksOfTheYear"];
+        }
+        
+        if ([rule monthsOfTheYear] != nil) {
+            NSArray *monthsOfTheYear = [NSArray arrayWithArray:[rule monthsOfTheYear]];
+            [recurrenceRule setValue:monthsOfTheYear forKey:@"monthsOfTheYear"];
+        }
+        
+        if ([rule daysOfTheWeek] != nil) {
+            NSArray *daysOfTheWeek = [NSArray arrayWithArray:[rule daysOfTheWeek]];
+            NSMutableArray *daysOfTheWeekForJson = [NSMutableArray array];
+            for(EKRecurrenceDayOfWeek *dow in daysOfTheWeek) {
+                NSMutableDictionary *day = [NSMutableDictionary dictionary];
+                [day setValue:@([dow weekNumber]) forKey:@"weeknumber"];
+                EKWeekday wk = [dow dayOfTheWeek];
+                [day setValue:[self weekDayStringMatchingConstants:wk] forKey:@"weekday"];
+                //[day setValue:[dow ] forKey:@"weeknumber"];
+                [daysOfTheWeekForJson addObject:day];
+            }
+            [recurrenceRule setValue:daysOfTheWeekForJson forKey:@"daysOfTheWeek"];
         }
 
         [formedCalendarEvent setValue:recurrenceRule forKey:_recurrenceRule];
