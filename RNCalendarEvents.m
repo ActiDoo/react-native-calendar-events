@@ -27,6 +27,7 @@ static NSString *const _lastModifiedDate = @"lastModifiedDate";
 static NSString *const _isDetached = @"isDetached";
 static NSString *const _availability = @"availability";
 static NSString *const _attendees = @"attendees";
+static NSString *const _organizer = @"organizer";
 
 @implementation RNCalendarEvents
 
@@ -537,6 +538,7 @@ RCT_EXPORT_MODULE()
                                                  },
                                          _availability: @"",
                                          _attendees: [NSArray array],
+                                         _organizer: [NSDictionary dictionary],
                                          };
 
     //firstDayOfTheWeek, daysOfTheMonth, daysOfTheYear, weeksOfTheYear, monthsOfTheYear, daysOfTheWeek
@@ -655,6 +657,19 @@ RCT_EXPORT_MODULE()
     if (event.lastModifiedDate) {
         [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.lastModifiedDate] forKey:_lastModifiedDate];
     }
+    
+    if (event.organizer) {
+        NSMutableDictionary *formattedParticipant = [[NSMutableDictionary alloc] init];
+        
+        [formattedParticipant setValue:(event.organizer.name) forKey:@"name"];
+        [formattedParticipant setValue:([self participantRoleStringMatchingConstant:event.organizer.participantRole]) forKey:@"participantRole"];
+        [formattedParticipant setValue:[self participantTypeStringMatchingConstant:event.organizer.participantType] forKey:@"participantType"];
+        [formattedParticipant setValue:[self participantStatusStringMatchingConstant:event.organizer.participantStatus] forKey:@"participantStatus"];
+        if(event.organizer.URL) {
+            [formattedParticipant setValue:(event.organizer.URL.resourceSpecifier) forKey:@"url"];
+        }
+        [formattedParticipant setValue:[NSNumber numberWithBool:event.organizer.isCurrentUser] forKey:@"isCurrentUser"];
+    }
 
     [formedCalendarEvent setValue:[NSNumber numberWithBool:event.isDetached] forKey:_isDetached];
 
@@ -733,7 +748,9 @@ RCT_EXPORT_MODULE()
             [formattedParticipant setValue:([self participantRoleStringMatchingConstant:participant.participantRole]) forKey:@"participantRole"];
             [formattedParticipant setValue:[self participantTypeStringMatchingConstant:participant.participantType] forKey:@"participantType"];
             [formattedParticipant setValue:[self participantStatusStringMatchingConstant:participant.participantStatus] forKey:@"participantStatus"];
-            [formattedParticipant setValue:(participant.URL) forKey:@"url"];
+            if(participant.URL) {
+                [formattedParticipant setValue:(participant.URL.resourceSpecifier) forKey:@"url"];
+            }
             [formattedParticipant setValue:[NSNumber numberWithBool:participant.isCurrentUser] forKey:@"isCurrentUser"];
             
             [attendees addObject:formattedParticipant];
