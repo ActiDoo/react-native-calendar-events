@@ -669,6 +669,8 @@ RCT_EXPORT_MODULE()
             [formattedParticipant setValue:(event.organizer.URL.resourceSpecifier) forKey:@"url"];
         }
         [formattedParticipant setValue:[NSNumber numberWithBool:event.organizer.isCurrentUser] forKey:@"isCurrentUser"];
+        
+        [formedCalendarEvent setValue:formattedParticipant forKey:_organizer];
     }
 
     [formedCalendarEvent setValue:[NSNumber numberWithBool:event.isDetached] forKey:_isDetached];
