@@ -36,7 +36,7 @@ export default {
 
   removeFutureEvents (id, options = {futureEvents: true}) {
     return RNCalendarEvents.removeEvent(id, options)
-  }
+  },
 
   createCalendar (calendarId, title) {
     return RNCalendarEvents.createCalendar(calendarId, title)
