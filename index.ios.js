@@ -26,20 +26,19 @@ export default {
     return RNCalendarEvents.findEventById(id);
   },
 
-  saveEvent (title, details) {
-    return RNCalendarEvents.saveEvent(title, details)
+  saveEvent (title, details, options = {}) {
+    return RNCalendarEvents.saveEvent(title, details, options)
   },
 
-  removeEvent (id) {
-    return RNCalendarEvents.removeEvent(id)
+  removeEvent (id, options = {futureEvents: false}) {
+    return RNCalendarEvents.removeEvent(id, options)
   },
 
-  removeFutureEvents (id) {
-    return RNCalendarEvents.removeFutureEvents(id)
-  },
+  removeFutureEvents (id, options = {futureEvents: true}) {
+    return RNCalendarEvents.removeEvent(id, options)
+  }
 
   createCalendar (calendarId, title) {
     return RNCalendarEvents.createCalendar(calendarId, title)
   }
-
 }
