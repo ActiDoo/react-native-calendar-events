@@ -8,6 +8,7 @@
 @end
 
 static NSString *const _id = @"id";
+static NSString *const _externalId = @"externalId";
 static NSString *const _calendarId = @"calendarId";
 static NSString *const _title = @"title";
 static NSString *const _location = @"location";
@@ -24,6 +25,9 @@ static NSString *const _isDetached = @"isDetached";
 static NSString *const _availability = @"availability";
 static NSString *const _attendees    = @"attendees";
 static NSString *const _timeZone    = @"timeZone";
+static NSString *const _creationDate = @"creationDate";
+static NSString *const _lastModifiedDate = @"lastModifiedDate";
+static NSString *const _organizer = @"organizer";
 
 dispatch_queue_t serialQueue;
 
@@ -106,6 +110,7 @@ RCT_EXPORT_MODULE()
     EKEvent *calendarEvent = nil;
     NSString *calendarId = [RCTConvert NSString:details[_calendarId]];
     NSString *eventId = [RCTConvert NSString:details[_id]];
+    NSString *externalEventId = [RCTConvert NSString:details[_externalId]];
     NSString *title = [RCTConvert NSString:details[_title]];
     NSString *location = [RCTConvert NSString:details[_location]];
     NSDate *startDate = [RCTConvert NSDate:details[_startDate]];
@@ -122,6 +127,8 @@ RCT_EXPORT_MODULE()
     if (eventId) {
         calendarEvent = (EKEvent *)[self.eventStore calendarItemWithIdentifier:eventId];
 
+    } else if (externalEventId) {
+        calendarEvent = (EKEvent *)[self.eventStore calendarItemsWithExternalIdentifier:externalEventId];
     } else {
         calendarEvent = [EKEvent eventWithEventStore:self.eventStore];
         calendarEvent.calendar = [self.eventStore defaultCalendarForNewEvents];
@@ -348,6 +355,92 @@ RCT_EXPORT_MODULE()
     return weekDay;
 }
 
+#pragma mark -
+#pragma mark enum2string
+- (NSString *)participantRoleStringMatchingConstant:(EKParticipantRole)constant
+    {
+        switch(constant) {
+            case EKParticipantRoleChair:
+                return @"char";
+            case EKParticipantRoleOptional:
+                return @"optional";
+            case EKParticipantRoleRequired:
+                return @"required";
+            case EKParticipantRoleNonParticipant:
+                return @"nonParticipant";
+            case EKParticipantRoleUnknown:
+                return @"unknown";
+            default:
+                return @"unknown";
+        }
+    }
+          
+
+- (NSString *)weekDayStringMatchingConstants:(EKWeekday) constant
+{
+    switch(constant) {
+        case EKWeekdaySaturday:
+            return @"saturday";
+        case EKWeekdaySunday:
+            return @"sunday";
+        case EKWeekdayMonday:
+            return @"monday";
+        case EKWeekdayTuesday:
+            return @"tuesday";
+        case EKWeekdayWednesday:
+            return @"wednesday";
+        case EKWeekdayThursday:
+            return @"thursday";
+        case EKWeekdayFriday:
+            return @"friday";
+        default:
+            return @"unknown";
+    }
+}
+
+
+- (NSString *)participantTypeStringMatchingConstant:(EKParticipantType)constant
+{
+  switch(constant) {
+      case EKParticipantTypeRoom:
+          return @"room";
+      case EKParticipantTypeGroup:
+          return @"group";
+      case EKParticipantTypePerson:
+          return @"person";
+      case EKParticipantTypeUnknown:
+          return @"unknown";
+      case EKParticipantTypeResource:
+          return @"resource";
+      default:
+          return @"unknown";
+  }
+}
+                           
+- (NSString *)participantStatusStringMatchingConstant:(EKParticipantStatus)constant
+    {
+        switch(constant) {
+            case EKParticipantStatusPending:
+                return @"pending";
+            case EKParticipantStatusUnknown:
+                return @"unknown";
+            case EKParticipantStatusAccepted:
+                return @"accepted";
+            case EKParticipantStatusDeclined:
+                return @"declined";
+            case EKParticipantStatusCompleted:
+                return @"completed";
+            case EKParticipantStatusDelegated:
+                return @"delegated";
+            case EKParticipantStatusInProcess:
+                return @"inProcess";
+            case EKParticipantStatusTentative:
+                return @"tentative";
+            default:
+                return @"unknown";
+        }
+    }
+
 -(NSMutableArray *) createRecurrenceDaysOfWeek: (NSArray *) days
 {
     NSMutableArray *daysOfTheWeek = nil;
@@ -500,12 +593,19 @@ RCT_EXPORT_MODULE()
                                          _url: @"",
                                          _alarms: [NSArray array],
                                          _attendees: [NSArray array],
+                                         _organizer: [NSDictionary dictionary],
                                          _recurrence: @"",
                                          _recurrenceRule: @{
                                                  @"frequency": @"",
                                                  @"interval": @"",
                                                  @"occurrence": @"",
-                                                 @"endDate": @""
+                                                 @"endDate": @"",
+                                                 @"firstDayOfTheWeek": @"",
+                                                  @"daysOfTheMonth": [NSArray array],
+                                                  @"daysOfTheYear": [NSArray array],
+                                                  @"weeksOfTheYear": [NSArray array],
+                                                  @"monthsOfTheYear": [NSArray array],
+                                                  @"daysOfTheWeek": [NSArray array]
                                                  },
                                          _availability: @"",
                                          _timeZone: @""
@@ -522,6 +622,10 @@ RCT_EXPORT_MODULE()
 
     if (event.calendarItemIdentifier) {
         [formedCalendarEvent setValue:event.calendarItemIdentifier forKey:_id];
+    }
+    
+    if (event.calendarItemExternalIdentifier) {
+        [formedCalendarEvent setValue:event.calendarItemExternalIdentifier forKey:_externalId];
     }
 
     if (event.calendar) {
@@ -593,6 +697,15 @@ RCT_EXPORT_MODULE()
                 else {
                     [formattedAttendee setValue:@"" forKey:@"name"];
                 }
+                
+                [formattedAttendee setValue:([self participantRoleStringMatchingConstant:attendee.participantRole]) forKey:@"participantRole"];
+                [formattedAttendee setValue:[self participantTypeStringMatchingConstant:attendee.participantType] forKey:@"participantType"];
+                [formattedAttendee setValue:[self participantStatusStringMatchingConstant:attendee.participantStatus] forKey:@"participantStatus"];
+                if(attendee.URL) {
+                    [formattedParticipant setValue:(attendee.URL.resourceSpecifier) forKey:@"url"];
+                }
+                [formattedAttendee setValue:[NSNumber numberWithBool:attendee.isCurrentUser] forKey:@"isCurrentUser"];
+                
                 [attendees addObject:formattedAttendee];
             }
             [formedCalendarEvent setValue:attendees forKey:_attendees];
@@ -674,6 +787,29 @@ RCT_EXPORT_MODULE()
     if (event.occurrenceDate) {
         [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.occurrenceDate] forKey:_occurrenceDate];
     }
+    
+    if (event.creationDate) {
+        [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.creationDate] forKey:_creationDate];
+    }
+
+    if (event.lastModifiedDate) {
+        [formedCalendarEvent setValue:[dateFormatter stringFromDate:event.lastModifiedDate] forKey:_lastModifiedDate];
+    }
+    
+    if (event.organizer) {
+        NSMutableDictionary *formattedParticipant = [[NSMutableDictionary alloc] init];
+        
+        [formattedParticipant setValue:(event.organizer.name) forKey:@"name"];
+        [formattedParticipant setValue:([self participantRoleStringMatchingConstant:event.organizer.participantRole]) forKey:@"participantRole"];
+        [formattedParticipant setValue:[self participantTypeStringMatchingConstant:event.organizer.participantType] forKey:@"participantType"];
+        [formattedParticipant setValue:[self participantStatusStringMatchingConstant:event.organizer.participantStatus] forKey:@"participantStatus"];
+        if(event.organizer.URL) {
+            [formattedParticipant setValue:(event.organizer.URL.resourceSpecifier) forKey:@"url"];
+        }
+        [formattedParticipant setValue:[NSNumber numberWithBool:event.organizer.isCurrentUser] forKey:@"isCurrentUser"];
+        [formedCalendarEvent setValue:formattedParticipant forKey:_organizer];
+    }
+
 
     [formedCalendarEvent setValue:[NSNumber numberWithBool:event.isDetached] forKey:_isDetached];
 
@@ -697,6 +833,44 @@ RCT_EXPORT_MODULE()
 
             if ([[rule recurrenceEnd] occurrenceCount]) {
                 [recurrenceRule setValue:@([[rule recurrenceEnd] occurrenceCount]) forKey:@"occurrence"];
+            }
+            
+            if ([rule firstDayOfTheWeek]) {
+                [recurrenceRule setValue:@([rule firstDayOfTheWeek]) forKey:@"firstDayOfTheWeek"];
+            }
+            
+            if ([rule daysOfTheMonth] != nil) {
+                NSArray *daysOfTheMonth = [NSArray arrayWithArray:[rule daysOfTheMonth]];
+                [recurrenceRule setValue:daysOfTheMonth forKey:@"daysOfTheMonth"];
+            }
+            
+            if ([rule daysOfTheYear] != nil) {
+                NSArray *daysOfTheYear = [NSArray arrayWithArray:[rule daysOfTheYear]];
+                [recurrenceRule setValue:daysOfTheYear forKey:@"daysOfTheYear"];
+            }
+            
+            if ([rule weeksOfTheYear] != nil) {
+                NSArray *weeksOfTheYear = [NSArray arrayWithArray:[rule weeksOfTheYear]];
+                [recurrenceRule setValue:weeksOfTheYear forKey:@"weeksOfTheYear"];
+            }
+            
+            if ([rule monthsOfTheYear] != nil) {
+                NSArray *monthsOfTheYear = [NSArray arrayWithArray:[rule monthsOfTheYear]];
+                [recurrenceRule setValue:monthsOfTheYear forKey:@"monthsOfTheYear"];
+            }
+            
+            if ([rule daysOfTheWeek] != nil) {
+                NSArray *daysOfTheWeek = [NSArray arrayWithArray:[rule daysOfTheWeek]];
+                NSMutableArray *daysOfTheWeekForJson = [NSMutableArray array];
+                for(EKRecurrenceDayOfWeek *dow in daysOfTheWeek) {
+                    NSMutableDictionary *day = [NSMutableDictionary dictionary];
+                    [day setValue:@([dow weekNumber]) forKey:@"weeknumber"];
+                    EKWeekday wk = [dow dayOfTheWeek];
+                    [day setValue:[self weekDayStringMatchingConstants:wk] forKey:@"weekday"];
+                    //[day setValue:[dow ] forKey:@"weeknumber"];
+                    [daysOfTheWeekForJson addObject:day];
+                }
+                [recurrenceRule setValue:daysOfTheWeekForJson forKey:@"daysOfTheWeek"];
             }
 
             [formedCalendarEvent setValue:recurrenceRule forKey:_recurrenceRule];
