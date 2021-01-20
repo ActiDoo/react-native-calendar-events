@@ -702,7 +702,7 @@ RCT_EXPORT_MODULE()
                 [formattedAttendee setValue:[self participantTypeStringMatchingConstant:attendee.participantType] forKey:@"participantType"];
                 [formattedAttendee setValue:[self participantStatusStringMatchingConstant:attendee.participantStatus] forKey:@"participantStatus"];
                 if(attendee.URL) {
-                    [formattedParticipant setValue:(attendee.URL.resourceSpecifier) forKey:@"url"];
+                    [formattedAttendee setValue:(attendee.URL.resourceSpecifier) forKey:@"url"];
                 }
                 [formattedAttendee setValue:[NSNumber numberWithBool:attendee.isCurrentUser] forKey:@"isCurrentUser"];
                 
